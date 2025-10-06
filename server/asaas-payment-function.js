@@ -47,37 +47,27 @@ exports.handler = async (event, context) => {
     
     // 2. Montagem do Payload para o Asaas
     const asaasPayload = {
-        // CORREÇÃO FINAL: REMOVEMOS O CAMPO 'customer' para forçar a criação de um novo cliente
+        // REMOVEMOS O CAMPO 'customer' (ID) para forçar a criação com base nos dados do cliente.
         
         billingType: payment.billingType,
         value: finalValue,
         dueDate: payment.dueDate,
         description: payment.description,
         
-        // Dados do Cliente (Customer Data) - Esses campos são usados para criar o cliente
+        // Dados do Cliente (MÍNIMOS NECESSÁRIOS)
         externalReference: 'SLAP-CHCKOUT-REF',
         name: customer.name,
         email: customer.email,
         cpfCnpj: cleanCpfCnpj,
         
-        // Dados adicionais exigidos
+        // Dados adicionais (obrigatórios)
         dateOfBirth: customer.dateOfBirth, // Formato AAAA-MM-DD
-        phone: '47999999999', // Adiciona um telefone fixo para satisfazer a validação rigorosa do Sandbox
+        phone: '47999999999', // Telefone de teste para validação
         
-        // CAMPOS DE ENDEREÇO (FICÇÃO) PARA SATISFAZER A VALIDAÇÃO DO ASAAS
-        address: "Rua Teste da Silva",
-        addressNumber: "100",
-        city: "São Paulo",
-        state: "SP",
-        postalCode: "01000-000",
-
         // Lógica de Parcelamento (Se for Cartão de Crédito)
         ...(payment.billingType === 'CREDIT_CARD' && {
             installmentCount: payment.installmentCount,
-            // ESSA CORREÇÃO GARANTE QUE O VALOR DA PARCELA É ENVIADO:
             installmentValue: payment.installmentValue,
-            // IMPORTANTE: Para cartão, o Asaas exige o ID do cliente criado previamente,
-            // mas estamos usando um fluxo simplificado para gerar a fatura.
         }),
     };
 
