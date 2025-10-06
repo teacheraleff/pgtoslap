@@ -12,7 +12,7 @@ const fetch = require('node-fetch');
 // A CHAVE DE API SECRETA é carregada da Variável de Ambiente configurada no Netlify.
 // ESTA CHAVE NUNCA DEVE SER EXPOSTA NO CÓDIGO DO CLIENTE (index.html).
 const ASAAS_API_KEY = process.env.ASAAS_API_KEY; 
-const ASAAS_API_URL = 'https://sandbox.asaas.com/api/v3'; // URL de TESTE (Sandbox)
+const ASAAS_API_URL = 'https://www.asaas.com/api/v3'; // <--- AGORA USA PRODUÇÃO
 
 exports.handler = async (event, context) => {
     // A função só aceita requisições POST.
@@ -59,14 +59,6 @@ exports.handler = async (event, context) => {
         name: customer.name,
         email: customer.email,
         cpfCnpj: cleanCpfCnpj,
-        
-        // DADOS DE ENDEREÇO E TELEFONE (FICÇÃO) PARA SATISFAZER A VALIDAÇÃO DO SANDBOX
-        mobilePhone: "47999999999", // Telefone de teste
-        address: "Rua Teste de Sucesso",
-        addressNumber: "123",
-        city: "São Paulo",
-        state: "SP",
-        postalCode: "01000000",
         
         // Lógica de Parcelamento (Se for Cartão de Crédito)
         ...(payment.billingType === 'CREDIT_CARD' && {
