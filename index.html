@@ -74,7 +74,7 @@
                             <input type="text" id="customer-cpf" placeholder="000.000.000-00" 
                                 class="w-full p-3 border border-zinc-700 rounded-lg focus:ring-2 focus:ring-blue-500 bg-zinc-900 text-white">
                         </div>
-                         <!-- CAMPO: Data de Nascimento -->
+                         <!-- CAMPO: Data de Nascimento (Agora é um seletor de calendário nativo) -->
                         <div>
                             <label for="customer-dob" class="block text-sm font-medium text-zinc-300 mb-1">Data de Nascimento</label> 
                             <input type="date" id="customer-dob" 
@@ -153,7 +153,7 @@
                     <div id="admin-setup-box" class="mb-6 pt-4 border-t border-zinc-700">
                         <p class="text-sm text-yellow-500 mb-2 font-medium">🛠️ Configuração Inicial do Admin</p>
                         <button id="setup-data-btn" onclick="setInitialData()" 
-                            class="w-full bg-yellow-700/50 hover:bg-yellow-700 text-yellow-200 font-bold py-2 rounded-lg transition-colors text-sm">
+                            class="w-full bg-yellow-700/50 hover:bg-yellow-700 text-yellow-200 font-bold py-2 rounded-lg transition-colors text-sm disabled:opacity-50">
                             Configurar Preço e Cupons Iniciais
                         </button>
                     </div>
@@ -246,7 +246,7 @@
         const COUPONS_COLLECTION_PATH = `${PUBLIC_DATA_PATH}/coupons`;
         
         // ENDPOINT PARA SEU SERVIDOR SEGURO (Netlify Function, Cloud Function, etc.)
-        const ASAAS_BACKEND_ENDPOINT = '/api/generate-asaas-payment';
+        const ASAAS_BACKEND_ENDPOINT = '/.netlify/functions/asaas-payment-function'; // CORREÇÃO: Padrão Netlify Functions
         
         // ------------------------------------
         // FIREBASE SETUP E LISTENERS
@@ -267,6 +267,7 @@
                 db = getFirestore(app);
                 auth = getAuth(app);
 
+                // Autenticação
                 if (initialAuthToken) {
                     await signInWithCustomToken(auth, initialAuthToken);
                 } else {
@@ -279,6 +280,8 @@
                         isAuthReady = true;
                         document.getElementById('firebase-status').textContent = "Status do DB: Conectado. Carregando dados...";
                         setupFirestoreListeners();
+                        // Garante que o botão de setup pode ser usado se o usuário for o administrador
+                        document.getElementById('setup-data-btn').disabled = false;
                     } else {
                         console.log("Usuário deslogado. Firestore não iniciado.");
                         document.getElementById('firebase-status').textContent = "Status do DB: Desconectado.";
@@ -332,7 +335,7 @@
                 COUPON_DATA = {};
                 if (snapshot.empty) {
                     console.log("Nenhum cupom encontrado.");
-                    document.getElementById('admin-setup-box').classList.remove('hidden');
+                    // document.getElementById('admin-setup-box').classList.remove('hidden'); // Deixa visível se não há preço
                     return;
                 }
 
@@ -341,7 +344,7 @@
                     COUPON_DATA[couponCode] = doc.data();
                 });
                 console.log("Cupons carregados:", Object.keys(COUPON_DATA));
-                document.getElementById('admin-setup-box').classList.add('hidden'); // Esconde após carregar
+                // document.getElementById('admin-setup-box').classList.add('hidden'); // Esconde após carregar
             }, (error) => {
                 console.error("Erro ao ler Cupons:", error);
             });
@@ -349,20 +352,23 @@
 
         /**
          * Função para inserir preço e cupons de teste no Firestore (apenas para setup inicial).
+         * CORREÇÃO: Adicionado async/await e ajuste na desativação do botão.
          */
         window.setInitialData = async () => {
             if (!db || !isAuthReady) {
-                console.error("Firebase não está pronto.");
+                alert("O Firebase ainda não está pronto. Tente novamente.");
+                console.error("Firebase não está pronto ou não autenticado.");
                 return;
             }
             try {
-                document.getElementById('setup-data-btn').disabled = true;
-                document.getElementById('setup-data-btn').textContent = "Configurando...";
+                const setupButton = document.getElementById('setup-data-btn');
+                setupButton.disabled = true;
+                setupButton.innerHTML = '<span class="spinner"></span> Configurando...';
 
                 // 1. Configuração do Produto
                 await setDoc(doc(db, CONFIG_DOC_PATH), {
                     basePrice: 500.00,
-                    productName: "Curso Completo de Marketing Digital",
+                    productName: "Curso Completo de Marketing Digital SLAP",
                     productFeatures: [
                         "Acesso vitalício ao conteúdo",
                         "30 horas de aulas em vídeo",
@@ -385,13 +391,14 @@
                     active: true 
                 });
                 
-                alert('Dados iniciais de preço e cupons inseridos com sucesso no Firestore!');
+                // alert('Dados iniciais de preço e cupons inseridos com sucesso no Firestore!');
             } catch (error) {
                 console.error("Erro ao configurar dados iniciais:", error);
                 alert('Erro ao configurar dados: ' + error.message);
             } finally {
-                document.getElementById('setup-data-btn').disabled = false;
-                document.getElementById('setup-data-btn').textContent = "Configurar Preço e Cupons Iniciais";
+                const setupButton = document.getElementById('setup-data-btn');
+                setupButton.disabled = false;
+                setupButton.textContent = "Configurar Preço e Cupons Iniciais";
             }
         };
 
@@ -583,31 +590,34 @@
             console.log('Payload enviado para o endpoint:', backendPayload);
             
             try {
-                // SIMULAÇÃO DE CHAMADA DE BACKEND (Trocar por fetch real para ASAAS_BACKEND_ENDPOINT)
-                await new Promise(resolve => setTimeout(resolve, 2500)); 
+                // CHAMADA REAL PARA O SEU ENDPOINT DO NETLIFY
+                const response = await fetch(ASAAS_BACKEND_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(backendPayload),
+                });
 
-                const mockAsaasResponse = {
-                    success: true,
-                    invoiceUrl: `https://app.asaas.com/fatura-mockup-${Math.random().toString(16).slice(2)}`,
-                    paymentMethod: selectedMethod
-                };
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || `Erro do Servidor: ${response.status}`);
+                }
+                
+                const asaasResponse = await response.json();
 
-                // Fim da Simulação 
-
-                if (mockAsaasResponse.success) {
-                    const msg = `✅ Cobrança gerada (${mockAsaasResponse.paymentMethod})! <br> <a href="${mockAsaasResponse.invoiceUrl}" target="_blank" class="text-blue-400 hover:text-blue-300 font-bold underline">Clique aqui para Pagar</a>.`;
+                if (asaasResponse.success) {
+                    const msg = `✅ Cobrança gerada (${asaasResponse.paymentMethod})! <br> <a href="${asaasResponse.invoiceUrl}" target="_blank" class="text-blue-400 hover:text-blue-300 font-bold underline">Clique aqui para Pagar</a>.`;
                     [statusMessageDesktop, statusMessageMobile].forEach(el => el.innerHTML = msg);
                     [statusContainerDesktop, statusContainerMobile].forEach(el => {
                         el.classList.remove('bg-red-900/50', 'bg-zinc-700');
                         el.classList.add('bg-green-900/50', 'text-green-300', 'block');
                     });
                 } else {
-                    throw new Error('Falha ao processar pagamento no servidor.');
+                    throw new Error(asaasResponse.message || 'Falha ao processar pagamento no Asaas.');
                 }
 
             } catch (error) {
                 console.error('Erro no pagamento:', error);
-                const msg = '❌ Erro ao gerar pagamento. Tente novamente ou mude o método.';
+                const msg = `❌ Erro ao gerar pagamento: ${error.message}.`;
                 [statusMessageDesktop, statusMessageMobile].forEach(el => el.textContent = msg);
                 [statusContainerDesktop, statusContainerMobile].forEach(el => {
                     el.classList.remove('bg-green-900/50', 'bg-zinc-700');
