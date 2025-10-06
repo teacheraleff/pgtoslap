@@ -45,7 +45,9 @@ exports.handler = async (event, context) => {
     
     // 2. Montagem do Payload para o Asaas
     const asaasPayload = {
-        customer: customer.email, // O Asaas aceita o email para identificar o cliente
+        // CORREÇÃO FINAL: Usamos o nome do cliente no campo 'customer' para a criação simplificada.
+        // O Asaas usa o nome como uma referência para criar o cliente se o ID não for passado.
+        customer: customer.name, 
         billingType: payment.billingType,
         value: finalValue,
         dueDate: payment.dueDate,
