@@ -1,3 +1,4 @@
+// FORCAR DEPLOY FINAL
 // Este código roda como uma Netlify Function (Node.js) e serve como servidor seguro.
 // Ele é responsável por:
 // 1. Receber os dados do checkout (preço final, cupom, dados do cliente).
