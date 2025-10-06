@@ -60,9 +60,7 @@ exports.handler = async (event, context) => {
         email: customer.email,
         cpfCnpj: cleanCpfCnpj,
         
-        // Dados adicionais (obrigatórios)
-        dateOfBirth: customer.dateOfBirth, // Formato AAAA-MM-DD
-        phone: '47999999999', // Telefone de teste para validação
+        // Dados adicionais (obrigatórios) - REMOVEMOS DATE OF BIRTH E PHONE PARA SIMPLIFICAR
         
         // Lógica de Parcelamento (Se for Cartão de Crédito)
         ...(payment.billingType === 'CREDIT_CARD' && {
