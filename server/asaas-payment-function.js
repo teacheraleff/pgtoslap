@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout Seguro - Asaas Payment</title>
+    <!-- Carrega Tailwind CSS para estilização -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configuração da fonte DM Sans (SLAP Font) -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background-color: #18181b; /* Fundo escuro (zinc-900) */
+            min-height: 100vh;
+        }
+        /* Cor de destaque SLAP: Amarelo (yellow-500/400) */
+        .slap-accent {
+            background-color: #f59e0b; /* yellow-600 */
+            color: #18181b; /* zinc-900 */
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="max-w-7xl mx-auto p-4 md:p-8">
+        <!-- HEADER -->
+        <header class="py-6 border-b border-zinc-700 mb-8">
+            <div class="flex flex-col items-center justify-center">
+                <!-- LOGO SLAP (Placeholder com o Amarelo de destaque) -->
+                <div class="text-4xl font-extrabold tracking-widest px-4 py-1 rounded-lg bg-yellow-500 text-zinc-900 shadow-xl shadow-yellow-900/50">SLAP</div>
+                
+                <h1 class="text-3xl font-extrabold text-white text-center mt-4">Finalizar Pedido</h1>
+                <p class="text-center text-zinc-400">Seu gateway de pagamento seguro integrado ao Asaas.</p>
+            </div>
+        </header>
+
+        <!-- CONTAINER PRINCIPAL: GRID RESPONSIVO (2 colunas em desktop, 1 coluna em mobile) -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- COLUNA 1: INFORMAÇÕES DO CLIENTE E PAGAMENTO (2/3 da largura no desktop) -->
+            <div class="lg:col-span-2 space-y-8">
+                
+                <!-- 1. ESPAÇO PARA CLIENTES PREENCHEREM -->
+                <section id="customer-info-section" class="bg-zinc-800 p-6 rounded-xl shadow-xl border border-zinc-700">
+                    <h2 class="text-xl font-semibold text-white mb-4 border-b border-zinc-700 pb-2">Informações Pessoais</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="customer-name" class="block text-sm font-medium text-zinc-300 mb-1">Nome Completo</label>
+                            <input type="text" id="customer-name" placeholder="Nome Completo" 
+                                class="w-full p-3 border border-zinc-700 rounded-lg focus:ring-2 focus:ring-blue-500 bg-zinc-900 text-white">
+                        </div>
+                        <div>
+                            <label for="customer-email" class="block text-sm font-medium text-zinc-300 mb-1">E-mail</label>
+                            <input type="email" id="customer-email" placeholder="seu@email.com" 
+                                class="w-full p-3 border border-zinc-700 rounded-lg focus:ring-2 focus:ring-blue-500 bg-zinc-900 text-white">
+                        </div>
+                        <div>
+                            <label for="customer-cpf" class="block text-sm font-medium text-zinc-300 mb-1">CPF (Apenas números)</label>
+                            <input type="text" id="customer-cpf" placeholder="00000000000" 
+                                class="w-full p-3 border border-zinc-700 rounded-lg focus:ring-2 focus:ring-blue-500 bg-zinc-900 text-white">
+                        </div>
+                         <!-- CAMPO: Data de Nascimento (Agora é um seletor de calendário nativo) -->
+                        <div>
+                            <label for="customer-dob" class="block text-sm font-medium text-zinc-300 mb-1">Data de Nascimento</label> 
+                            <input type="date" id="customer-dob" 
+                                class="w-full p-3 border border-zinc-700 rounded-lg focus:ring-2 focus:ring-blue-500 bg-zinc-900 text-white">
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. MODO DE PAGAMENTO -->
+                <section id="payment-method-section" class="bg-zinc-800 p-6 rounded-xl shadow-xl border border-zinc-700">
+                    <h2 class="text-xl font-semibold text-white mb-4 border-b border-zinc-700 pb-2">Selecione o Método de Pagamento</h2>
+                    
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <!-- PIX -->
+                        <div class="flex-1">
+                            <input type="radio" id="method-pix" name="payment-method" value="PIX" checked class="hidden peer">
+                            <label for="method-pix" class="flex items-center justify-between p-4 border-2 border-green-500 rounded-xl cursor-pointer peer-checked:bg-green-900/50 peer-checked:ring-2 peer-checked:ring-green-500 transition-all duration-200">
+                                <span class="font-bold text-green-300">PIX (Recomendado)</span>
+                                <!-- SVG Icone PIX (Simples) -->
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M7 15h0.01"/></svg>
+                            </label>
+                        </div>
+                        
+                        <!-- CARTÃO DE CRÉDITO -->
+                        <div class="flex-1">
+                            <input type="radio" id="method-card" name="payment-method" value="CREDIT_CARD" class="hidden peer">
+                            <label for="method-card" class="flex items-center justify-between p-4 border-2 border-zinc-700 rounded-xl cursor-pointer peer-checked:bg-blue-900/50 peer-checked:ring-2 peer-checked:ring-blue-500 transition-all duration-200">
+                                <span class="font-bold text-blue-300">Cartão de Crédito</span>
+                                <!-- SVG Icone Cartão -->
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-500"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                            </label>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SELETOR DE PARCELAS (Aparece SOMENTE para Cartão de Crédito) -->
+                <section id="installments-section" class="bg-zinc-800 p-6 rounded-xl shadow-xl border border-zinc-700 hidden">
+                    <h2 class="text-xl font-semibold text-white mb-4 border-b border-zinc-700 pb-2">Opções de Parcelamento</h2>
+                    <div>
+                        <label for="installments" class="block text-sm font-medium text-zinc-300 mb-1">Número de Parcelas</label>
+                        <select id="installments" class="w-full p-3 border border-zinc-700 rounded-lg focus:ring-2 focus:ring-blue-500 bg-zinc-900 text-white">
+                            <!-- Opções serão preenchidas dinamicamente pelo JavaScript -->
+                        </select>
+                        <p class="text-xs text-zinc-400 mt-2">Valores são calculados com base no preço total. O cálculo final de juros deve ser configurado no seu backend.</p>
+                    </div>
+                </section>
+                
+                <!-- ÁREA DE MENSAGEM DE STATUS (Para mobile) -->
+                <div id="status-message-container-mobile" class="lg:hidden mt-6 p-3 bg-zinc-700 rounded-lg text-center hidden">
+                    <p id="status-message-mobile" class="text-zinc-200 font-medium"></p>
+                </div>
+
+                <!-- Botão de Pagamento para Mobile -->
+                <button id="payment-button-mobile" onclick="handlePayment()" 
+                    class="lg:hidden mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold py-4 rounded-xl transition-all duration-300 shadow-xl shadow-blue-900/50">
+                    Gerar Pagamento Asaas
+                </button>
+            </div>
+
+            <!-- COLUNA 2: RESUMO DA COMPRA (SIDE BOX) (1/3 da largura no desktop) -->
+            <div class="lg:col-span-1">
+                <div class="bg-zinc-800 p-6 rounded-xl shadow-2xl sticky top-8 border border-zinc-700">
+                    
+                    <h2 class="text-xl font-bold text-white mb-4 border-b border-zinc-700 pb-2">Resumo da Compra</h2>
+                    
+                    <!-- BOX LATERAL: O QUE INCLUI NESSA COMPRA -->
+                    <div id="product-info-summary" class="mb-6 space-y-3">
+                        <p class="font-semibold text-lg text-white">Curso de Teste SLAP</p>
+                        <ul id="product-features" class="text-sm text-zinc-400 space-y-1 ml-4 list-disc">
+                            <li>Acesso de teste por 7 dias</li>
+                            <li>Simulação com Asaas Sandbox</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- ESPAÇO PARA CUPOM -->
+                    <div class="mb-6 pt-4 border-t border-zinc-700">
+                        <label for="coupon-input" class="block text-sm font-medium text-zinc-300 mb-2">Cupom de Desconto</label>
+                        <div class="flex space-x-2">
+                            <input type="text" id="coupon-input" placeholder="CÓDIGO" 
+                                class="flex-1 p-2 border border-zinc-700 rounded-lg focus:ring-2 focus:ring-yellow-400 uppercase transition-colors bg-zinc-900 text-white"
+                                oninput="document.getElementById('coupon-message').textContent = ''">
+                            <button id="apply-coupon-btn" onclick="applyCoupon()" 
+                                class="bg-yellow-500 hover:bg-yellow-400 text-zinc-900 font-bold py-2 px-4 rounded-lg transition-colors disabled:opacity-50 shadow-md shadow-yellow-900/50">
+                                Aplicar
+                            </button>
+                        </div>
+                        <p id="coupon-message" class="mt-2 text-sm h-5"></p>
+                    </div>
+
+                    <!-- RESUMO DO PREÇO -->
+                    <div class="space-y-3 pt-4 border-t border-zinc-700">
+                        <div class="flex justify-between text-zinc-300">
+                            <span>Preço Base:</span>
+                            <span id="original-price-display" class="font-medium">R$ 0,00</span>
+                        </div>
+                        <div class="flex justify-between text-zinc-300">
+                            <span>Desconto Aplicado:</span>
+                            <span id="discount-display" class="font-medium text-green-400">- R$ 0,00</span>
+                        </div>
+                        <div class="flex justify-between items-center text-2xl font-bold border-t pt-3 border-zinc-700">
+                            <span>Total:</span>
+                            <span id="total-price-display" class="text-blue-500">R$ 0,00</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Botão de Pagamento para Desktop -->
+                    <button id="payment-button-desktop" onclick="handlePayment()" 
+                        class="hidden lg:block mt-8 w-full bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold py-4 rounded-xl transition-all duration-300 shadow-xl shadow-blue-900/50">
+                        Gerar Pagamento Asaas
+                    </button>
+
+                    <!-- ÁREA DE MENSAGEM DE STATUS (Para desktop) -->
+                    <div id="status-message-container-desktop" class="hidden lg:block mt-6 p-3 bg-zinc-700 rounded-lg text-center hidden">
+                        <p id="status-message-desktop" class="text-zinc-200 font-medium"></p>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+    
+    <script>
+        // ENDPOINT PARA SEU SERVIDOR SEGURO (Netlify Function no diretório 'server')
+        // Este caminho deve corresponder ao nome do arquivo: /server/asaas-payment-function
+        const ASAAS_BACKEND_ENDPOINT = '/.netlify/functions/asaas-payment-function'; 
+        
+        // --- DADOS DO PRODUTO E CUPONS (HARDCODED) ---
+        let originalPrice = 1.00; // Preço de TESTE para Sandbox
+        let currentDiscount = 0;
+        let finalPrice = 0.00;
+
+        // Cupons válidos para o teste
+        const COUPON_DATA = {
+            'SLAP10': { type: 'percentage', value: 0.10, description: '10% de desconto!' },
+            'SLAPFREE': { type: 'fixed', value: 100.00, description: 'R$ 100,00 de desconto fixo!' },
+        };
+        // ------------------------------------
+
+        /**
+         * Formata um número como moeda brasileira (R$).
+         */
+        const formatCurrency = (value) => {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+            }).format(value);
+        };
+        
+        /**
+         * Atualiza as opções de parcelamento na lista suspensa com base no preço final.
+         */
+        const updateInstallmentOptions = (price) => {
+            const select = document.getElementById('installments');
+            if (!select) return;
+
+            select.innerHTML = '';
+            
+            const options = [
+                { count: 1, text: '1x sem juros', factor: 1.0 },
+                { count: 2, text: '2x sem juros', factor: 1.0 },
+                { count: 3, text: '3x sem juros', factor: 1.0 },
+                { count: 6, text: '6x c/ juros', factor: 1.10 }, 
+                { count: 12, text: '12x c/ juros', factor: 1.15 }, 
+            ];
+
+            options.forEach(opt => {
+                // Aplica a taxa de juros e calcula o valor mensal
+                const finalValueWithInterest = price * opt.factor;
+                const monthlyPrice = finalValueWithInterest / opt.count;
+
+                const option = document.createElement('option');
+                option.value = opt.count;
+                
+                // Trata o caso de preço muito baixo para evitar NaN ou preços estranhos
+                const displayPrice = price > 0.01 ? monthlyPrice : 0; 
+                
+                option.textContent = `${opt.count}x - ${opt.text} (${formatCurrency(displayPrice)})`;
+                select.appendChild(option);
+            });
+        };
+
+
+        /**
+         * Aplica o cupom de desconto usando os dados hardcoded.
+         */
+        window.applyCoupon = () => {
+            const couponInput = document.getElementById('coupon-input');
+            const couponCode = couponInput.value.toUpperCase().trim();
+            const messageElement = document.getElementById('coupon-message');
+            
+            currentDiscount = 0;
+            messageElement.className = 'mt-2 text-sm h-5';
+            
+            const couponData = COUPON_DATA[couponCode];
+
+            if (!couponData) {
+                messageElement.textContent = `🚫 Cupom "${couponCode}" inválido.`;
+                messageElement.classList.add('text-red-500');
+            } else {
+                
+                if (couponData.type === 'percentage') {
+                    currentDiscount = originalPrice * couponData.value; 
+                } else if (couponData.type === 'fixed') {
+                    currentDiscount = couponData.value;
+                }
+
+                currentDiscount = Math.min(currentDiscount, originalPrice); // Desconto máximo é o preço original
+                
+                messageElement.textContent = `✅ Cupom aplicado! (${couponData.description})`;
+                messageElement.classList.add('text-green-500'); 
+            }
+
+            updateTotalPrice();
+        };
+
+        /**
+         * Recalcula o preço final e atualiza todos os displays e opções de parcelamento.
+         */
+        const updateTotalPrice = () => {
+            finalPrice = originalPrice - currentDiscount;
+
+            // Atualiza os displays
+            document.getElementById('original-price-display').textContent = formatCurrency(originalPrice);
+            document.getElementById('discount-display').textContent = `- ${formatCurrency(currentDiscount)}`;
+            document.getElementById('total-price-display').textContent = formatCurrency(finalPrice);
+            
+            // Atualiza as opções de parcelamento com o novo preço
+            updateInstallmentOptions(finalPrice);
+            
+            // Lógica de botão para pedido gratuito
+            const btnDesktop = document.getElementById('payment-button-desktop');
+            const btnMobile = document.getElementById('payment-button-mobile');
+
+            [btnDesktop, btnMobile].forEach(btn => {
+                if (finalPrice <= 0) {
+                    btn.textContent = "Finalizar Pedido (Grátis)";
+                    btn.classList.remove('bg-blue-600');
+                    btn.classList.add('bg-indigo-600');
+                } else {
+                    btn.textContent = 'Gerar Pagamento Asaas';
+                    btn.classList.remove('bg-indigo-600');
+                    btn.classList.add('bg-blue-600');
+                }
+            });
+        };
+
+        /**
+         * Função principal de pagamento que envia os dados para o backend seguro.
+         */
+        window.handlePayment = async () => {
+            const btnDesktop = document.getElementById('payment-button-desktop');
+            const btnMobile = document.getElementById('payment-button-mobile');
+            const statusContainerDesktop = document.getElementById('status-message-container-desktop');
+            const statusContainerMobile = document.getElementById('status-message-container-mobile');
+            const statusMessageDesktop = document.getElementById('status-message-desktop');
+            const statusMessageMobile = document.getElementById('status-message-mobile');
+
+            // --- 1. COLETA E VALIDAÇÃO DOS DADOS DO CLIENTE ---
+            const customerName = document.getElementById('customer-name').value.trim();
+            const customerEmail = document.getElementById('customer-email').value.trim();
+            const customerCpf = document.getElementById('customer-cpf').value.trim().replace(/\D/g, ''); // Limpa o CPF
+            const customerDob = document.getElementById('customer-dob').value.trim(); 
+            const selectedMethod = document.querySelector('input[name="payment-method"]:checked').value;
+            
+            let installments = 1; 
+
+            if (selectedMethod === 'CREDIT_CARD') {
+                 installments = parseInt(document.getElementById('installments').value, 10);
+            }
+
+
+            if (!customerName || !customerEmail || !customerCpf || !customerDob) {
+                const msg = '❌ Por favor, preencha todos os campos obrigatórios (Nome, E-mail, CPF e Data de Nascimento).';
+                [statusMessageDesktop, statusMessageMobile].forEach(el => el.textContent = msg);
+                [statusContainerDesktop, statusContainerMobile].forEach(el => {
+                    el.classList.remove('hidden', 'bg-green-900/50', 'bg-zinc-700');
+                    el.classList.add('block', 'bg-red-900/50', 'text-red-300'); 
+                });
+                return;
+            }
+            
+            // Validação simples de CPF (11 dígitos)
+             if (customerCpf.length !== 11) {
+                const msg = '❌ Por favor, insira um CPF com 11 dígitos.';
+                [statusMessageDesktop, statusMessageMobile].forEach(el => el.textContent = msg);
+                [statusContainerDesktop, statusContainerMobile].forEach(el => {
+                    el.classList.remove('hidden', 'bg-green-900/50', 'bg-zinc-700');
+                    el.classList.add('block', 'bg-red-900/50', 'text-red-300'); 
+                });
+                return;
+            }
+
+
+            // Limpa e prepara o status
+            [statusContainerDesktop, statusContainerMobile].forEach(el => el.classList.add('hidden'));
+            const originalButtonText = btnDesktop.textContent;
+
+            [btnDesktop, btnMobile].forEach(btn => {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner"></span> Gerando Cobrança...';
+            });
+            
+            const couponCode = document.getElementById('coupon-input').value.toUpperCase().trim();
+            const valueToSend = finalPrice > 0 ? finalPrice : 0.01; // Asaas não aceita valor zero
+
+            // --- 2. MONTA O PAYLOAD COMPLETO PARA O BACKEND ---
+            const backendPayload = {
+                customer: {
+                    name: customerName,
+                    email: customerEmail,
+                    cpfCnpj: customerCpf,
+                    dateOfBirth: customerDob, 
+                },
+                payment: {
+                    billingType: selectedMethod, 
+                    value: valueToSend,
+                    // Data de vencimento para amanhã
+                    dueDate: new Date(Date.now() + 86400000).toISOString().split('T')[0], 
+                    description: 'Curso de Teste SLAP',
+                    installmentCount: installments, 
+                },
+                appliedDiscount: {
+                    originalPrice: originalPrice,
+                    discountAmount: currentDiscount,
+                    couponCode: couponCode,
+                }
+            };
+
+            console.log('Payload enviado para o endpoint:', backendPayload);
+            
+            try {
+                // CHAMADA REAL PARA O SEU ENDPOINT DO NETLIFY
+                const response = await fetch(ASAAS_BACKEND_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(backendPayload),
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    // Este erro é o que você estava vendo: 404 (Not Found)
+                    throw new Error(`Erro do Servidor: ${response.status} (${response.statusText}). Função não encontrada!`); 
+                }
+                
+                const asaasResponse = await response.json();
+
+                if (asaasResponse.success) {
+                    const msg = `✅ Cobrança gerada (${asaasResponse.paymentMethod})! <br> <a href="${asaasResponse.invoiceUrl}" target="_blank" class="text-blue-400 hover:text-blue-300 font-bold underline">Clique aqui para Pagar</a>.`;
+                    [statusMessageDesktop, statusMessageMobile].forEach(el => el.innerHTML = msg);
+                    [statusContainerDesktop, statusContainerMobile].forEach(el => {
+                        el.classList.remove('bg-red-900/50', 'bg-zinc-700');
+                        el.classList.add('bg-green-900/50', 'text-green-300', 'block');
+                    });
+                } else {
+                    throw new Error(asaasResponse.message || 'Falha ao processar pagamento no Asaas.');
+                }
+
+            } catch (error) {
+                console.error('Erro no pagamento:', error);
+                const msg = `❌ Erro ao gerar pagamento: ${error.message}.`;
+                [statusMessageDesktop, statusMessageMobile].forEach(el => el.textContent = msg);
+                [statusContainerDesktop, statusContainerMobile].forEach(el => {
+                    el.classList.remove('bg-green-900/50', 'bg-zinc-700');
+                    el.classList.add('bg-red-900/50', 'text-red-300', 'block');
+                });
+            } finally {
+                [btnDesktop, btnMobile].forEach(btn => {
+                    btn.disabled = false;
+                    btn.textContent = originalButtonText;
+                });
+            }
+        };
+
+        // --- Event Listeners para Parcelas ---
+        document.querySelectorAll('input[name="payment-method"]').forEach(radio => {
+            radio.addEventListener('change', (event) => {
+                const installmentsSection = document.getElementById('installments-section');
+                if (event.target.value === 'CREDIT_CARD' && event.target.checked) {
+                    installmentsSection.classList.remove('hidden');
+                } else {
+                    installmentsSection.classList.add('hidden');
+                }
+            });
+        });
+
+        // --- Inicialização ---
+        window.onload = updateTotalPrice;
+        
+    </script>
+</body>
+</html>
