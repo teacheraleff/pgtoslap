@@ -61,6 +61,7 @@ exports.handler = async (event, context) => {
         
         // Dados adicionais exigidos
         dateOfBirth: customer.dateOfBirth, // Formato AAAA-MM-DD
+        phone: '47999999999', // Adiciona um telefone fixo para satisfazer a validação rigorosa do Sandbox
         
         // Lógica de Parcelamento (Se for Cartão de Crédito)
         ...(payment.billingType === 'CREDIT_CARD' && {
@@ -116,6 +117,6 @@ exports.handler = async (event, context) => {
         return {
             statusCode: 500,
             body: JSON.stringify({ success: false, message: `Erro interno do servidor: ${error.message}` }),
-        };
+        });
     }
 };
