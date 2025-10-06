@@ -1,4 +1,5 @@
 // FORCAR DEPLOY FINAL
+// Último Commit: 2025-10-06 14:45:00
 // Este código roda como uma Netlify Function (Node.js) e serve como servidor seguro.
 // Ele é responsável por:
 // 1. Receber os dados do checkout (preço final, cupom, dados do cliente).
