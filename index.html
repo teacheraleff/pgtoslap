@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Checkout Seguro - Asaas Payment</title>
+    <title>Checkout Simples - Asaas Payment</title>
     <!-- Carrega Tailwind CSS para estilização -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Configuração da fonte DM Sans (SLAP Font) -->
@@ -35,7 +35,7 @@
         }
     </style>
 </head>
-<body>
+<body onload="initializeCheckout()">
 
     <div class="max-w-7xl mx-auto p-4 md:p-8">
         <!-- HEADER -->
@@ -74,7 +74,7 @@
                             <input type="text" id="customer-cpf" placeholder="000.000.000-00" 
                                 class="w-full p-3 border border-zinc-700 rounded-lg focus:ring-2 focus:ring-blue-500 bg-zinc-900 text-white">
                         </div>
-                         <!-- CAMPO: Data de Nascimento (Agora é um seletor de calendário nativo) -->
+                         <!-- CAMPO: Data de Nascimento (Seletor de calendário nativo) -->
                         <div>
                             <label for="customer-dob" class="block text-sm font-medium text-zinc-300 mb-1">Data de Nascimento</label> 
                             <input type="date" id="customer-dob" 
@@ -142,20 +142,11 @@
                     
                     <!-- BOX LATERAL: O QUE INCLUI NESSA COMPRA -->
                     <div id="product-info-summary" class="mb-6 space-y-3">
-                        <p class="font-semibold text-lg text-white" id="product-name">Carregando...</p>
+                        <!-- Nome do Produto (Carregado do JS) -->
+                        <p class="font-semibold text-lg text-white" id="product-name">Carregando...</p> 
                         <ul id="product-features" class="text-sm text-zinc-400 space-y-1 ml-4 list-disc">
-                            <!-- Features carregadas dinamicamente -->
-                            <li>Acesso vitalício ao conteúdo</li>
+                            <!-- Features Carregadas do JS -->
                         </ul>
-                    </div>
-
-                    <!-- BOTÃO DE CONFIGURAÇÃO (VISÍVEL APENAS PARA ADMIN) -->
-                    <div id="admin-setup-box" class="mb-6 pt-4 border-t border-zinc-700">
-                        <p class="text-sm text-yellow-500 mb-2 font-medium">🛠️ Configuração Inicial do Admin</p>
-                        <button id="setup-data-btn" onclick="setInitialData()" disabled
-                            class="w-full bg-yellow-700/50 hover:bg-yellow-700 text-yellow-200 font-bold py-2 rounded-lg transition-colors text-sm disabled:opacity-50">
-                            Configurar Preço e Cupons Iniciais
-                        </button>
                     </div>
                     
                     <!-- ESPAÇO PARA CUPOM -->
@@ -199,9 +190,9 @@
                     <div id="status-message-container-desktop" class="hidden lg:block mt-6 p-3 bg-zinc-700 rounded-lg text-center hidden">
                         <p id="status-message-desktop" class="text-zinc-200 font-medium"></p>
                     </div>
-                     <!-- Status de Conexão Firebase -->
-                    <div id="firebase-status" class="mt-4 text-xs text-center text-zinc-500">
-                        Status do DB: Conectando...
+                     <!-- Status Simples -->
+                    <div id="system-status" class="mt-4 text-xs text-center text-zinc-500">
+                        Sistema pronto para checkout.
                     </div>
 
                 </div>
@@ -210,205 +201,50 @@
         </div>
     </div>
     
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { 
-            getFirestore, 
-            doc, 
-            setDoc, 
-            onSnapshot, 
-            collection, 
-            setLogLevel,
-            query, 
-            getDoc 
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Variáveis de Ambiente e Inicialização
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' 
-            ? JSON.parse(__firebase_config) 
-            : {}; // MUDANÇA CRUCIAL: Se a variável não existir (no Netlify), use um objeto vazio {}
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+    <script>
+        // --- DADOS DO PRODUTO E CUPONS (HARDCODED) ---
+        const originalPrice = 500.00;
+        const productName = "Curso Completo de Marketing Digital SLAP";
+        const productFeatures = [
+            "Acesso vitalício ao conteúdo",
+            "30 horas de aulas em vídeo",
+            "Certificado de Conclusão (SLAP)",
+            "Suporte prioritário por 1 ano"
+        ];
+        
+        // Cupons agora estão dentro do código para simplicidade
+        const COUPON_DATA = {
+            'SLAP10': { type: 'percentage', value: 0.10, description: '10% de desconto!' },
+            'SLAPFREE': { type: 'fixed', value: 100.00, description: 'R$ 100,00 de desconto fixo!' },
+            'PROMO50': { type: 'fixed', value: 50.00, description: 'R$ 50,00 de desconto adicional!' },
+        };
+        
+        // ENDPOINT PARA SEU SERVIDOR SEGURO (Netlify Function)
+        const ASAAS_BACKEND_ENDPOINT = '/.netlify/functions/asaas-payment-function'; 
         
         // Variáveis de Estado Global
-        let db;
-        let auth;
-        let userId = 'anon';
-        let isAuthReady = false;
-        
-        let originalPrice = 0.00; // Preço base lido do Firestore
         let currentDiscount = 0;
-        let finalPrice = 0.00;
-        let COUPON_DATA = {}; // Cupons lidos do Firestore
-
-        // Constantes do Firestore
-        const PUBLIC_DATA_PATH = `/artifacts/${appId}/public/data`;
-        const CONFIG_DOC_PATH = `${PUBLIC_DATA_PATH}/config/product_config`;
-        const COUPONS_COLLECTION_PATH = `${PUBLIC_DATA_PATH}/coupons`;
-        
-        // ENDPOINT PARA SEU SERVIDOR SEGURO (Netlify Function, Cloud Function, etc.)
-        const ASAAS_BACKEND_ENDPOINT = '/.netlify/functions/asaas-payment-function'; // CORREÇÃO: Padrão Netlify Functions
-        
-        // ------------------------------------
-        // FIREBASE SETUP E LISTENERS
-        // ------------------------------------
-
-        /**
-         * Inicializa o Firebase e configura a autenticação.
-         */
-        const initializeFirebase = async () => {
-            // Se a configuração for um objeto vazio, o Firebase falhará, mas o erro será tratado corretamente.
-            if (!firebaseConfig || Object.keys(firebaseConfig).length === 0) {
-                console.error("Firebase config is missing from the environment. Disabling DB features.");
-                document.getElementById('firebase-status').textContent = "Status do DB: ERRO (Config indisponível)";
-                document.getElementById('setup-data-btn').disabled = true; // Mantém desativado
-                return;
-            }
-            
-            try {
-                // setLogLevel('debug'); // Descomente para debug
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-
-                // Autenticação
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
-
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        isAuthReady = true;
-                        document.getElementById('firebase-status').textContent = "Status do DB: Conectado. Carregando dados...";
-                        setupFirestoreListeners();
-                        // Garante que o botão de setup pode ser usado se o usuário for o administrador
-                        document.getElementById('setup-data-btn').disabled = false;
-                    } else {
-                        console.log("Usuário deslogado. Firestore não iniciado.");
-                        document.getElementById('firebase-status').textContent = "Status do DB: Desconectado.";
-                    }
-                });
-
-            } catch (error) {
-                console.error("Erro ao inicializar Firebase:", error);
-                document.getElementById('firebase-status').textContent = "Status do DB: ERRO (Auth)";
-            }
-        };
-
-        /**
-         * Configura listeners em tempo real (onSnapshot) para Preço e Cupons.
-         */
-        const setupFirestoreListeners = () => {
-            if (!db || !isAuthReady) return;
-
-            // 1. Listener para Configuração do Produto (Preço Base)
-            onSnapshot(doc(db, CONFIG_DOC_PATH), (docSnapshot) => {
-                if (docSnapshot.exists()) {
-                    const config = docSnapshot.data();
-                    originalPrice = config.basePrice || 0.00;
-                    document.getElementById('product-name').textContent = config.productName || 'Produto SLAP';
-                    
-                    const featuresUl = document.getElementById('product-features');
-                    featuresUl.innerHTML = '';
-                    if (Array.isArray(config.productFeatures)) {
-                        config.productFeatures.forEach(feature => {
-                            const li = document.createElement('li');
-                            li.textContent = feature;
-                            featuresUl.appendChild(li);
-                        });
-                    }
-                    
-                    updateTotalPrice();
-                    document.getElementById('firebase-status').textContent = `Status do DB: Carregado. Preço base: ${formatCurrency(originalPrice)}`;
-                    document.getElementById('admin-setup-box').classList.add('hidden'); // Esconde após carregar os dados
-                } else {
-                    // Se o documento não existir, mostrar botão de setup
-                    console.warn("Documento de configuração não encontrado. Clique em 'Configurar...'");
-                    document.getElementById('admin-setup-box').classList.remove('hidden');
-                    document.getElementById('firebase-status').textContent = "Status do DB: Aguardando Configuração Inicial.";
-                }
-            }, (error) => {
-                console.error("Erro ao ler Configuração:", error);
-                document.getElementById('firebase-status').textContent = "Status do DB: ERRO ao ler Configuração.";
-            });
-            
-            // 2. Listener para Cupons
-            onSnapshot(collection(db, COUPONS_COLLECTION_PATH), (snapshot) => {
-                COUPON_DATA = {};
-                if (snapshot.empty) {
-                    console.log("Nenhum cupom encontrado.");
-                    return;
-                }
-
-                snapshot.forEach(doc => {
-                    const couponCode = doc.id;
-                    COUPON_DATA[couponCode] = doc.data();
-                });
-                console.log("Cupons carregados:", Object.keys(COUPON_DATA));
-            }, (error) => {
-                console.error("Erro ao ler Cupons:", error);
-            });
-        };
-
-        /**
-         * Função para inserir preço e cupons de teste no Firestore (apenas para setup inicial).
-         */
-        window.setInitialData = async () => {
-            if (!db || !isAuthReady) {
-                alert("O Firebase ainda não está pronto. Tente novamente.");
-                console.error("Firebase não está pronto ou não autenticado.");
-                return;
-            }
-            try {
-                const setupButton = document.getElementById('setup-data-btn');
-                setupButton.disabled = true;
-                setupButton.innerHTML = '<span class="spinner"></span> Configurando...';
-
-                // 1. Configuração do Produto
-                await setDoc(doc(db, CONFIG_DOC_PATH), {
-                    basePrice: 500.00,
-                    productName: "Curso Completo de Marketing Digital SLAP",
-                    productFeatures: [
-                        "Acesso vitalício ao conteúdo",
-                        "30 horas de aulas em vídeo",
-                        "Certificado de Conclusão (SLAP)",
-                        "Suporte prioritário por 1 ano"
-                    ]
-                });
-
-                // 2. Cupons de Teste
-                await setDoc(doc(db, COUPONS_COLLECTION_PATH, 'SLAP10'), { 
-                    type: 'percentage', 
-                    value: 0.10, 
-                    description: '10% de desconto no SLAP!',
-                    active: true 
-                });
-                await setDoc(doc(db, COUPONS_COLLECTION_PATH, 'SLAPFREE'), { 
-                    type: 'fixed', 
-                    value: 100.00, 
-                    description: 'R$ 100,00 de desconto fixo!',
-                    active: true 
-                });
-                
-                // alert('Dados iniciais de preço e cupons inseridos com sucesso no Firestore!');
-            } catch (error) {
-                console.error("Erro ao configurar dados iniciais:", error);
-                alert('Erro ao configurar dados: ' + error.message);
-            } finally {
-                const setupButton = document.getElementById('setup-data-btn');
-                setupButton.disabled = false;
-                setupButton.textContent = "Configurar Preço e Cupons Iniciais";
-            }
-        };
-
+        let finalPrice = originalPrice;
 
         // ------------------------------------
         // FUNÇÕES GERAIS E UTILS
         // ------------------------------------
+        
+        /**
+         * Inicializa o checkout com dados hardcoded.
+         */
+        window.initializeCheckout = () => {
+            // Carrega os dados do produto na tela
+            document.getElementById('product-name').textContent = productName;
+            const featuresUl = document.getElementById('product-features');
+            featuresUl.innerHTML = '';
+            productFeatures.forEach(feature => {
+                const li = document.createElement('li');
+                li.textContent = feature;
+                featuresUl.appendChild(li);
+            });
+            updateTotalPrice();
+        };
 
         /**
          * Formata um número como moeda brasileira (R$).
@@ -431,7 +267,6 @@
             select.innerHTML = '';
             
             // Definições de parcelas (Simulação de juros/sem juros para display)
-            // IMPORTANTE: O Asaas permite configurar essas taxas no backend
             const options = [
                 { count: 1, text: '1x sem juros', factor: 1.0, monthly: price },
                 { count: 2, text: '2x sem juros', factor: 1.0, monthly: price / 2 },
@@ -451,11 +286,11 @@
         };
 
         // ------------------------------------
-        // LÓGICA DE PREÇOS E CUPONS (AGORA USA FIREBASE)
+        // LÓGICA DE PREÇOS E CUPONS 
         // ------------------------------------
 
         /**
-         * Aplica o cupom de desconto usando os dados carregados do Firestore.
+         * Aplica o cupom de desconto usando os dados hardcoded.
          */
         window.applyCoupon = () => {
             const couponInput = document.getElementById('coupon-input');
@@ -465,19 +300,16 @@
             currentDiscount = 0;
             messageElement.className = 'mt-2 text-sm h-5';
             
-            // AGORA USA COUPON_DATA DO FIREBASE
             const couponData = COUPON_DATA[couponCode];
 
-            if (!couponData || !couponData.active) {
-                messageElement.textContent = `🚫 Cupom "${couponCode}" inválido ou inativo.`;
+            if (!couponData) {
+                messageElement.textContent = `🚫 Cupom "${couponCode}" inválido.`;
                 messageElement.classList.add('text-red-500');
             } else {
                 
                 if (couponData.type === 'percentage') {
-                    // Valor percentual (ex: 0.10 para 10%)
                     currentDiscount = originalPrice * couponData.value; 
                 } else if (couponData.type === 'fixed') {
-                    // Valor fixo (ex: 50.00)
                     currentDiscount = couponData.value;
                 }
 
@@ -569,6 +401,7 @@
             const valueToSend = finalPrice > 0 ? finalPrice : 0.01; 
 
             // --- 2. MONTA O PAYLOAD COMPLETO PARA O BACKEND ---
+            // IMPORTANTE: Este payload será enviado ao seu servidor seguro (Netlify Function)
             const backendPayload = {
                 customer: {
                     name: customerName,
@@ -580,7 +413,7 @@
                     billingType: selectedMethod, 
                     value: valueToSend,
                     dueDate: new Date(Date.now() + 86400000).toISOString().split('T')[0],
-                    description: document.getElementById('product-name').textContent,
+                    description: productName,
                     installmentCount: installments, 
                 },
                 appliedDiscount: {
@@ -647,7 +480,7 @@
         });
 
         // --- Inicialização ---
-        window.onload = initializeFirebase;
+        // O checkout é inicializado quando o corpo da página carrega
         
     </script>
 </body>
