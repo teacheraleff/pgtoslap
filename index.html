@@ -226,7 +226,9 @@
 
         // Variáveis de Ambiente e Inicialização
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const firebaseConfig = typeof __firebase_config !== 'undefined' 
+            ? JSON.parse(__firebase_config) 
+            : {}; // MUDANÇA CRUCIAL: Se a variável não existir (no Netlify), use um objeto vazio {}
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         
         // Variáveis de Estado Global
@@ -256,11 +258,14 @@
          * Inicializa o Firebase e configura a autenticação.
          */
         const initializeFirebase = async () => {
-            if (!firebaseConfig) {
-                console.error("Firebase config is missing.");
-                document.getElementById('firebase-status').textContent = "Status do DB: ERRO (Config)";
+            // Se a configuração for um objeto vazio, o Firebase falhará, mas o erro será tratado corretamente.
+            if (!firebaseConfig || Object.keys(firebaseConfig).length === 0) {
+                console.error("Firebase config is missing from the environment. Disabling DB features.");
+                document.getElementById('firebase-status').textContent = "Status do DB: ERRO (Config indisponível)";
+                document.getElementById('setup-data-btn').disabled = true; // Mantém desativado
                 return;
             }
+            
             try {
                 // setLogLevel('debug'); // Descomente para debug
                 const app = initializeApp(firebaseConfig);
@@ -319,6 +324,7 @@
                     
                     updateTotalPrice();
                     document.getElementById('firebase-status').textContent = `Status do DB: Carregado. Preço base: ${formatCurrency(originalPrice)}`;
+                    document.getElementById('admin-setup-box').classList.add('hidden'); // Esconde após carregar os dados
                 } else {
                     // Se o documento não existir, mostrar botão de setup
                     console.warn("Documento de configuração não encontrado. Clique em 'Configurar...'");
@@ -335,7 +341,6 @@
                 COUPON_DATA = {};
                 if (snapshot.empty) {
                     console.log("Nenhum cupom encontrado.");
-                    // document.getElementById('admin-setup-box').classList.remove('hidden'); // Deixa visível se não há preço
                     return;
                 }
 
@@ -344,7 +349,6 @@
                     COUPON_DATA[couponCode] = doc.data();
                 });
                 console.log("Cupons carregados:", Object.keys(COUPON_DATA));
-                // document.getElementById('admin-setup-box').classList.add('hidden'); // Esconde após carregar
             }, (error) => {
                 console.error("Erro ao ler Cupons:", error);
             });
@@ -352,7 +356,6 @@
 
         /**
          * Função para inserir preço e cupons de teste no Firestore (apenas para setup inicial).
-         * CORREÇÃO: Adicionado async/await e ajuste na desativação do botão.
          */
         window.setInitialData = async () => {
             if (!db || !isAuthReady) {
