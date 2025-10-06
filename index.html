@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hub de Marketing | SLAP</title>
+    <link rel="icon" type="image/png" href="https://res.cloudinary.com/dqfi22uz0/image/upload/v1749543469/SLAP_FAVICON_AMARELO_coilvj.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Palette: SLAP Brand Colors: #F1D24B (Yellow), #FF5C3D (Orange), #84C7DF (Blue), #8671D1 (Purple) -->
+    <style>
+        body {
+            font-family: 'DM Sans', sans-serif;
+            line-height: 1.25;
+        }
+        .nav-item.active {
+            background-color: #FFFBEB; /* yellow-50 */
+            color: #F1D24B;
+            font-weight: 600;
+        }
+        .dropdown-toggle.active-parent {
+            background-color: #f5f5f4; /* stone-100 */
+            color: #44403c; /* stone-700 */
+        }
+        .dropdown-arrow.rotate-180 { transform: rotate(180deg); }
+        .submenu { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
+        .submenu.open { max-height: 500px; }
+
+        /* --- Estilos do Modal (Genérico) --- */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; }
+        .modal-overlay.visible { opacity: 1; visibility: visible; }
+        .modal-content { background-color: white; padding: 2rem; border-radius: 0.75rem; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; transform: scale(0.95); transition: transform 0.3s; }
+        .modal-overlay.visible .modal-content { transform: scale(1); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e7e5e4; padding-bottom: 1rem; margin-bottom: 1rem; }
+        .modal-header h4 { font-size: 1.25rem; font-weight: 700; color: #44403c; }
+        .modal-close-btn { background: none; border: none; cursor: pointer; color: #a8a29e; }
+        
+        /* --- Estilos do Hub de Marketing --- */
+        .kpi-card { background-color: #ffffff; border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: center; border-left-width: 4px; }
+        .kpi-card-blue { border-color: #84C7DF; }
+        .kpi-card-purple { border-color: #8671D1; }
+        .kpi-card-orange { border-color: #FF5C3D; }
+        .kpi-card-yellow { border-color: #F1D24B; }
+        .campaign-card { background-color: #ffffff; border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid #e7e5e4; }
+        .status-tag { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+        .status-active { background-color: #D1FAE5; color: #065F46; }
+        .status-planned { background-color: #DBEAFE; color: #1E40AF; }
+        .status-completed { background-color: #F3F4F6; color: #4B5563; }
+        .brand-color-swatch { width: 100%; height: 80px; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; font-weight: 600; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.3); }
+        .persona-card { background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 0.75rem; padding: 1.5rem; }
+        .resource-link { display: block; background-color: #f9fafb; padding: 1rem; border-radius: 0.5rem; font-weight: 600; color: #4b5563; transition: all 0.2s ease; border-left: 4px solid #d1d5db; }
+        .resource-link:hover { background-color: #f3f4f6; border-color: #F1D24B; color: #1f2937; transform: translateX(4px); }
+        
+        /* --- ESTILOS ATUALIZADOS: Lista de Tarefas --- */
+        .task-card { background-color: #ffffff; border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid #e7e5e4; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; }
+        .assignee-tag { display: inline-flex; align-items: center; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem; }
+        .tag-ana { background-color: #FEF3C7; color: #92400E; } /* Amarelo */
+        .tag-bruno { background-color: #DBEAFE; color: #1E40AF; } /* Azul */
+        .tag-carla { background-color: #D1FAE5; color: #065F46; } /* Verde */
+        .tag-daniel { background-color: #EFEBFF; color: #4C1D95; } /* Roxo */
+        .deadline-text { font-weight: 600; color: #57534e; }
+        .deadline-overdue { color: #b91c1c; }
+        .filter-btn { background-color: #f3f4f6; color: #4b5563; border: 1px solid #d1d5db; padding: 0.5rem 1rem; border-radius: 0.375rem; font-weight: 600; transition: all 0.2s; }
+        .filter-btn:hover { background-color: #e5e7eb; }
+        .filter-btn.active { background-color: #F1D24B; color: #44403c; border-color: #F1D24B; }
+
+        /* --- ESTILOS: Calendário Semanal --- */
+        .week-container { background-color: #ffffff; padding: 1.5rem; border-radius: 0.75rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e7e5e4; margin-bottom: 2rem; }
+        .week-header { font-size: 1.5rem; font-weight: 700; color: #44403c; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e7e5e4; }
+        .week-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; }
+        .day-card { background-color: #f9fafb; border-radius: 0.5rem; padding: 1rem; border: 1px solid #f3f4f6; min-height: 150px; cursor: pointer; transition: border-color 0.2s; }
+        .day-card:hover { border-color: #F1D24B; }
+        .day-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+        .day-name { font-weight: 600; color: #a8a29e; font-size: 0.875rem; }
+        .day-number { font-weight: 700; color: #44403c; font-size: 1.25rem; }
+        .post-item { background-color: #ffffff; border-radius: 0.375rem; padding: 0.5rem; margin-bottom: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); position: relative; }
+        .post-type-tag { display: inline-block; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 700; margin-bottom: 0.25rem; text-transform: uppercase; }
+        .post-tag-stories { background-color: #DBEAFE; color: #1E40AF; }
+        .post-tag-reels { background-color: #EFEBFF; color: #4C1D95; }
+        .post-tag-tiktok { background-color: #F3F4F6; color: #1F2937; }
+        .post-tag-youtube { background-color: #FEE2E2; color: #991B1B; }
+        .post-description { font-size: 0.875rem; color: #57534e; }
+        .delete-btn { position: absolute; top: 4px; right: 4px; background: none; border: none; cursor: pointer; color: #d1d5db; opacity: 0; transition: opacity 0.2s; }
+        .post-item:hover .delete-btn { opacity: 1; }
+        .delete-btn:hover { color: #ef4444; }
+        .form-input { width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; }
+        .primary-btn { background-color: #F1D24B; color: #44403c; padding: 0.75rem 1.5rem; border-radius: 0.375rem; font-weight: 600; transition: background-color 0.2s; }
+        .primary-btn:hover { background-color: #eab308; }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800">
+
+    <div id="app-container" class="min-h-screen md:flex">
+        
+        <aside class="md:w-64 bg-white md:border-r border-b border-stone-200 p-4 md:p-6 flex flex-col">
+            <div class="mb-6 text-center">
+                <img src="https://res.cloudinary.com/dqfi22uz0/image/upload/v1749349751/DBB440C2-684E-4DCF-9CD3-B2DDC18F1E53_3_vgocga.jpg" alt="Logo SLAP" class="w-24 h-auto mx-auto rounded-lg">
+            </div>
+            <h1 class="text-xl font-bold text-stone-800 mb-6 text-center">Hub de Marketing</h1>
+            <nav id="main-navigation" class="space-y-1 flex-1">
+                <!-- Início (Dashboard) -->
+                <button data-target="inicio" class="nav-item w-full text-left px-4 py-2.5 rounded-lg text-stone-700 hover:bg-yellow-50 hover:text-[#F1D24B] transition-colors flex items-center font-semibold">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-3"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+                    Início
+                </button>
+
+                <!-- Campanhas -->
+                <button data-target="campanhas" class="nav-item w-full text-left px-4 py-2.5 rounded-lg text-stone-700 hover:bg-yellow-50 hover:text-[#F1D24B] transition-colors flex items-center font-semibold">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-3"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2z"></polygon></svg>
+                    Campanhas
+                </button>
+
+                <!-- Lista de Tarefas -->
+                <button data-target="tarefas" class="nav-item w-full text-left px-4 py-2.5 rounded-lg text-stone-700 hover:bg-yellow-50 hover:text-[#F1D24B] transition-colors flex items-center font-semibold">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-3"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+                    Tarefas
+                </button>
+
+                <!-- Calendário de Conteúdo -->
+                <button data-target="calendario" class="nav-item w-full text-left px-4 py-2.5 rounded-lg text-stone-700 hover:bg-yellow-50 hover:text-[#F1D24B] transition-colors flex items-center font-semibold">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-3"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" x2="16" y1="2" y2="6"></line><line x1="8" x2="8" y1="2" y2="6"></line><line x1="3" x2="21" y1="10" y2="10"></line></svg>
+                    Calendário
+                </button>
+
+                <!-- Analytics -->
+                <button data-target="analytics" class="nav-item w-full text-left px-4 py-2.5 rounded-lg text-stone-700 hover:bg-yellow-50 hover:text-[#F1D24B] transition-colors flex items-center font-semibold">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-3"><path d="M3 3v18h18"/><path d="M18.7 8a6 6 0 0 0-6-6"/><path d="M13 13a6 6 0 0 0 6-6"/></svg>
+                    Analytics
+                </button>
+
+                <!-- Estratégia (Dropdown) -->
+                <div class="nav-dropdown">
+                    <button class="nav-item dropdown-toggle w-full text-left px-4 py-2.5 rounded-lg text-stone-700 hover:bg-yellow-50 hover:text-[#F1D24B] transition-colors flex items-center justify-between font-semibold">
+                        <span class="flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-3"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9.09 9.09 5.82 5.82"/><path d="m14.91 9.09-5.82 5.82"/></svg>
+                            Estratégia
+                        </span>
+                        <svg class="dropdown-arrow w-4 h-4 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </button>
+                    <div class="submenu pl-6 mt-1 space-y-1">
+                        <button data-target="manual-marca" class="nav-item submenu-item w-full text-left px-4 py-2 rounded-lg text-stone-600 hover:bg-yellow-50 hover:text-[#F1D24B] transition-colors">Manual da Marca</button>
+                        <button data-target="personas" class="nav-item submenu-item w-full text-left px-4 py-2 rounded-lg text-stone-600 hover:bg-yellow-50 hover:text-[#F1D24B] transition-colors">Personas</button>
+                    </div>
+                </div>
+
+                <!-- Recursos -->
+                <button data-target="recursos" class="nav-item w-full text-left px-4 py-2.5 rounded-lg text-stone-700 hover:bg-yellow-50 hover:text-[#F1D24B] transition-colors flex items-center font-semibold">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-3"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+                    Recursos
+                </button>
+            </nav>
+            <div class="mt-4">
+                <a href="#" id="logout-button" class="nav-item w-full text-left px-4 py-2.5 rounded-lg text-stone-700 hover:bg-red-50 hover:text-red-600 transition-colors flex items-center font-semibold">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-3"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                    Sair
+                </a>
+            </div>
+        </aside>
+    
+        <main class="flex-1 p-4 sm:p-6 md:p-8">
+            <header id="main-header" class="mb-8">
+                <h2 id="main-title" class="text-3xl font-bold text-[#F1D24B]"></h2>
+                <p id="main-description" class="mt-2 text-stone-600"></p>
+            </header>
+            
+            <div id="content-area">
+                <!-- Conteúdo será injetado aqui dinamicamente -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Genérico -->
+    <div id="form-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 id="form-modal-title"></h4>
+                <button class="modal-close-btn" onclick="closeFormModal()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <form id="form-modal-body" class="space-y-4"></form>
+        </div>
+    </div>
+
+    <script type="module">
+        // Importações do Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- VARIÁVEIS GLOBAIS ---
+        const contentArea = document.getElementById('content-area');
+        const mainHeader = document.getElementById('main-header');
+        let currentChart;
+
+        // Variáveis de estado para os dados do Firestore
+        let db, auth, userId;
+        let tasks = [];
+        let campaigns = [];
+        let calendarEvents = {}; // Agora um objeto para agrupar por data
+        let unsubscribeTasks, unsubscribeCampaigns, unsubscribeCalendar; // Para limpar os listeners
+
+        // --- CONFIGURAÇÃO E INICIALIZAÇÃO DO FIREBASE ---
+        async function initializeFirebase() {
+            try {
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'hub-marketing-slap';
+                const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+
+                if (!firebaseConfig.apiKey) {
+                    console.error("Configuração do Firebase não encontrada. O app funcionará com dados locais.");
+                    loadMockData(); // Carrega dados locais se o Firebase não estiver configurado
+                    renderInicioSection();
+                    setActiveNavItem(document.querySelector('[data-target="inicio"]'));
+                    return;
+                }
+
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        console.log("Usuário autenticado:", userId);
+                        // Inicia os listeners para os dados do Firestore
+                        setupFirestoreListeners(appId);
+                    } else {
+                        // Se não houver usuário, tenta autenticação anônima
+                        signInAnonymously(auth).catch(error => console.error("Erro na autenticação anônima:", error));
+                    }
+                });
+                
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+            } catch (error) {
+                console.error("Erro ao inicializar o Firebase:", error);
+                loadMockData();
+                renderInicioSection();
+                setActiveNavItem(document.querySelector('[data-target="inicio"]'));
+            }
+        }
+
+        function setupFirestoreListeners(appId) {
+            // Limpa listeners antigos para evitar duplicação
+            if (unsubscribeTasks) unsubscribeTasks();
+            if (unsubscribeCampaigns) unsubscribeCampaigns();
+            if (unsubscribeCalendar) unsubscribeCalendar();
+
+            // Caminhos das coleções públicas
+            const tasksCollection = collection(db, `artifacts/${appId}/public/data/tasks`);
+            const campaignsCollection = collection(db, `artifacts/${appId}/public/data/campaigns`);
+            const calendarCollection = collection(db, `artifacts/${appId}/public/data/calendarEvents`);
+
+            // Listener para Tarefas
+            const tasksQuery = query(tasksCollection, orderBy("deadline", "asc"));
+            unsubscribeTasks = onSnapshot(tasksQuery, (snapshot) => {
+                tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                // Re-renderiza a seção de tarefas se estiver visível
+                if (document.getElementById('task-list-container')) {
+                    renderTarefasSection();
+                }
+            });
+
+            // Listener para Campanhas
+            const campaignsQuery = query(campaignsCollection, orderBy("createdAt", "desc"));
+            unsubscribeCampaigns = onSnapshot(campaignsQuery, (snapshot) => {
+                campaigns = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                if (document.querySelector('.campaign-card')) {
+                     renderCampanhasSection();
+                }
+            });
+
+            // Listener para Calendário
+            const calendarQuery = query(calendarCollection, orderBy("createdAt", "desc"));
+            unsubscribeCalendar = onSnapshot(calendarQuery, (snapshot) => {
+                calendarEvents = {}; // Reseta para reconstruir
+                snapshot.docs.forEach(doc => {
+                    const event = { id: doc.id, ...doc.data() };
+                    if (!calendarEvents[event.date]) {
+                        calendarEvents[event.date] = [];
+                    }
+                    calendarEvents[event.date].push(event);
+                });
+                if (document.getElementById('calendar-wrapper')) {
+                    renderCalendarioSection();
+                }
+            });
+        }
+        
+        // --- DADOS MOCKADOS (FALLBACK) ---
+        let kpiData, personasData;
+        function loadMockData() {
+            kpiData = {
+                novosLeads: { valor: "1,280", variacao: "+15%" },
+                taxaConversao: { valor: "4.7%", variacao: "+0.5%" },
+                engajamentoSocial: { valor: "12.3K", variacao: "-2%" },
+                custoAquisicao: { valor: "R$ 25,40", variacao: "+5%" }
+            };
+            personasData = [ /* ... dados das personas ... */ ];
+        }
+
+
+        // --- FUNÇÕES DE RENDERIZAÇÃO (MODIFICADAS) ---
+
+        function showHeader() {
+            mainHeader.classList.remove('hidden');
+        }
+
+        function setActiveNavItem(element) {
+            document.querySelectorAll('#main-navigation .nav-item').forEach(item => {
+                item.classList.remove('active', 'active-parent');
+            });
+            if (element) {
+                element.classList.add('active');
+                const parentDropdown = element.closest('.nav-dropdown');
+                if (parentDropdown) {
+                    parentDropdown.querySelector('.dropdown-toggle').classList.add('active-parent');
+                }
+            }
+        }
+
+        function renderInicioSection() {
+            showHeader();
+            document.getElementById('main-title').textContent = 'Dashboard de Marketing';
+            document.getElementById('main-description').textContent = 'Visão geral dos principais indicadores e atividades da equipe.';
+            
+            contentArea.innerHTML = `
+                <section>
+                    <!-- KPIs -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="kpi-card kpi-card-blue">
+                            <h3 class="text-stone-600 font-semibold mb-2">Novos Leads (Mês)</h3>
+                            <p class="text-4xl font-bold text-stone-800">${kpiData.novosLeads.valor}</p>
+                            <p class="text-green-600 font-semibold mt-1">${kpiData.novosLeads.variacao}</p>
+                        </div>
+                        <div class="kpi-card kpi-card-purple">
+                            <h3 class="text-stone-600 font-semibold mb-2">Taxa de Conversão</h3>
+                            <p class="text-4xl font-bold text-stone-800">${kpiData.taxaConversao.valor}</p>
+                            <p class="text-green-600 font-semibold mt-1">${kpiData.taxaConversao.variacao}</p>
+                        </div>
+                        <div class="kpi-card kpi-card-orange">
+                            <h3 class="text-stone-600 font-semibold mb-2">Engajamento Social</h3>
+                            <p class="text-4xl font-bold text-stone-800">${kpiData.engajamentoSocial.valor}</p>
+                            <p class="text-red-600 font-semibold mt-1">${kpiData.engajamentoSocial.variacao}</p>
+                        </div>
+                        <div class="kpi-card kpi-card-yellow">
+                            <h3 class="text-stone-600 font-semibold mb-2">Custo por Aquisição</h3>
+                            <p class="text-4xl font-bold text-stone-800">${kpiData.custoAquisicao.valor}</p>
+                            <p class="text-red-600 font-semibold mt-1">${kpiData.custoAquisicao.variacao}</p>
+                        </div>
+                    </div>
+
+                    <!-- Campanhas Ativas e Avisos -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                            <h3 class="text-lg font-semibold mb-4 text-stone-800">Campanhas Ativas</h3>
+                            <div class="space-y-4">
+                                ${campaigns.filter(c => c.status === 'Ativa').map(c => `
+                                    <div>
+                                        <p class="font-bold text-stone-700">${c.nome}</p>
+                                        <p class="text-sm text-stone-500">Responsável: ${c.responsavel}</p>
+                                    </div>
+                                `).join('') || '<p class="text-stone-500">Nenhuma campanha ativa no momento.</p>'}
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                            <h3 class="text-lg font-semibold mb-4 text-stone-800">Avisos da Equipe</h3>
+                            <p class="text-stone-600">Reunião de alinhamento semanal movida para terça-feira, às 10h. Por favor, atualizem suas agendas.</p>
+                        </div>
+                    </div>
+                </section>
+            `;
+            if (currentChart) currentChart.destroy();
+        }
+
+        function renderCampanhasSection() {
+            showHeader();
+            document.getElementById('main-title').textContent = 'Gestor de Campanhas';
+            document.getElementById('main-description').textContent = 'Acompanhe o status e os resultados de todas as campanhas de marketing.';
+            
+            contentArea.innerHTML = `
+                <div class="text-right mb-6">
+                    <button class="primary-btn" onclick="openCampaignForm()">+ Adicionar Campanha</button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    ${campaigns.map((campaign) => {
+                        let statusClass = '';
+                        switch(campaign.status) {
+                            case 'Ativa': statusClass = 'status-active'; break;
+                            case 'Planejada': statusClass = 'status-planned'; break;
+                            case 'Concluída': statusClass = 'status-completed'; break;
+                        }
+                        return `
+                        <div class="campaign-card cursor-pointer hover:shadow-lg hover:border-[#F1D24B] transition-all" onclick="openCampaignModal('${campaign.id}')">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="text-xl font-bold text-stone-800">${campaign.nome}</h3>
+                                <span class="status-tag ${statusClass}">${campaign.status}</span>
+                            </div>
+                            <p class="text-sm text-stone-500 mb-4">Responsável: ${campaign.responsavel}</p>
+                            <div class="bg-stone-50 p-3 rounded-lg">
+                                <p class="text-sm font-semibold text-stone-700">Objetivo:</p>
+                                <p class="text-sm text-stone-600">${campaign.objetivo}</p>
+                            </div>
+                        </div>
+                        `
+                    }).join('') || '<p class="text-stone-500 col-span-full text-center">Nenhuma campanha cadastrada.</p>'}
+                </div>
+            `;
+            if (currentChart) currentChart.destroy();
+        }
+
+        function renderTarefasSection() {
+            showHeader();
+            document.getElementById('main-title').textContent = 'Lista de Tarefas';
+            document.getElementById('main-description').textContent = 'Gerencie e acompanhe as tarefas da equipe de marketing.';
+            if (currentChart) currentChart.destroy();
+            
+            const assignees = [...new Set(tasks.flatMap(task => task.assignedTo))];
+
+            contentArea.innerHTML = `
+                <section>
+                    <div class="flex justify-between items-center mb-6">
+                        <div id="task-filters" class="flex flex-col sm:flex-row flex-wrap gap-4 bg-white p-4 rounded-lg shadow-sm items-center">
+                            <div class="flex-grow">
+                                <label for="person-filter" class="text-sm font-medium text-stone-600 mr-2">Filtrar por:</label>
+                                <select id="person-filter" class="p-2 border border-stone-300 rounded-md">
+                                    <option value="all">Todos</option>
+                                    ${assignees.map(name => `<option value="${name}">${name}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div id="deadline-filters" class="flex gap-2">
+                                <button class="filter-btn active" data-filter="all">Todos</button>
+                                <button class="filter-btn" data-filter="nearest">Prazo Próximo</button>
+                                <button class="filter-btn" data-filter="overdue">Vencidas</button>
+                            </div>
+                        </div>
+                        <button class="primary-btn" onclick="openTaskForm()">+ Adicionar Tarefa</button>
+                    </div>
+                    <div id="task-list-container" class="space-y-4">
+                        <!-- As tarefas serão renderizadas aqui pelo JavaScript -->
+                    </div>
+                </section>
+            `;
+
+            function updateTaskList() {
+                const personFilter = document.getElementById('person-filter').value;
+                const deadlineFilter = document.querySelector('#deadline-filters .filter-btn.active').dataset.filter;
+                
+                let filteredTasks = [...tasks];
+
+                if (personFilter !== 'all') {
+                    filteredTasks = filteredTasks.filter(task => task.assignedTo.includes(personFilter));
+                }
+
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                if (deadlineFilter === 'overdue') {
+                    filteredTasks = filteredTasks.filter(task => new Date(task.deadline) < today);
+                } else if (deadlineFilter === 'nearest') {
+                    filteredTasks = filteredTasks
+                        .filter(task => new Date(task.deadline) >= today)
+                        .sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+                } else {
+                    filteredTasks.sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+                }
+
+                const taskListContainer = document.getElementById('task-list-container');
+                if (filteredTasks.length === 0) {
+                    taskListContainer.innerHTML = `<div class="text-center p-8 bg-white rounded-lg"><p class="text-stone-500">Nenhuma tarefa encontrada com os filtros selecionados.</p></div>`;
+                    return;
+                }
+                
+                taskListContainer.innerHTML = filteredTasks.map(task => {
+                    const deadlineDate = new Date(task.deadline);
+                    const isOverdue = deadlineDate < today;
+                    const deadlineClass = isOverdue ? 'deadline-overdue' : '';
+                    const formattedDate = deadlineDate.toLocaleDateString('pt-BR', { timeZone: 'UTC', day: '2-digit', month: '2-digit', year: 'numeric' });
+
+                    return `
+                        <div class="task-card">
+                            <p class="text-stone-700 flex-1">${task.description}</p>
+                            <div class="flex items-center gap-4">
+                                <div class="flex items-center">
+                                    ${task.assignedTo.map(name => `<span class="assignee-tag tag-${name.toLowerCase()}">${name}</span>`).join('')}
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-xs text-stone-500">Prazo</span>
+                                    <p class="deadline-text ${deadlineClass}">${formattedDate}</p>
+                                </div>
+                                <button class="delete-btn" onclick="deleteTask('${task.id}')">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            document.getElementById('person-filter').addEventListener('change', updateTaskList);
+            document.querySelectorAll('#deadline-filters .filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelector('#deadline-filters .filter-btn.active').classList.remove('active');
+                    btn.classList.add('active');
+                    updateTaskList();
+                });
+            });
+
+            updateTaskList();
+        }
+
+        function renderCalendarioSection() {
+            showHeader();
+            document.getElementById('main-title').textContent = 'Calendário de Conteúdo';
+            document.getElementById('main-description').textContent = 'Planeje e visualize todas as publicações de redes sociais, blog, email e vídeo em um formato semanal.';
+            
+            if (currentChart) currentChart.destroy();
+
+            const weekStarts = [
+                new Date('2025-06-30T03:00:00Z'),
+                new Date('2025-07-07T03:00:00Z')
+            ];
+
+            let finalHtml = '';
+            weekStarts.forEach((startDate, index) => {
+                finalHtml += generateWeekHtml(startDate, `Semana ${index + 1}`);
+            });
+
+            contentArea.innerHTML = finalHtml;
+        }
+
+        function generateWeekHtml(startDate, weekTitle) {
+            const daysOfWeek = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+            const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+            let weekGridHtml = '';
+
+            const endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 6);
+
+            for (let i = 0; i < 7; i++) {
+                const day = new Date(startDate);
+                day.setDate(startDate.getDate() + i);
+                
+                const dateStr = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
+                const posts = calendarEvents[dateStr] || [];
+
+                const postsHtml = posts.map(post => {
+                    const typeText = post.type.charAt(0).toUpperCase() + post.type.slice(1);
+                    return `
+                        <div class="post-item">
+                            <span class="post-type-tag post-tag-${post.type}">${typeText}</span>
+                            <p class="post-description">${post.description}</p>
+                            <button class="delete-btn" onclick="deleteCalendarEvent('${post.id}')">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                        </div>
+                    `;
+                }).join('');
+
+                weekGridHtml += `
+                    <div class="day-card" onclick="openCalendarEventForm('${dateStr}')">
+                        <div class="day-card-header">
+                            <span class="day-name">${daysOfWeek[i]}</span>
+                            <span class="day-number">${day.getDate()}</span>
+                        </div>
+                        <div>${postsHtml}</div>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="week-container">
+                    <h3 class="week-header">${weekTitle}: ${startDate.getDate()} de ${monthNames[startDate.getMonth()]} - ${endDate.getDate()} de ${monthNames[endDate.getMonth()]}</h3>
+                    <div class="week-grid">
+                        ${weekGridHtml}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // --- FUNÇÕES DE INTERAÇÃO COM O BANCO DE DADOS (FIRESTORE) ---
+
+        async function saveTask(event) {
+            event.preventDefault();
+            const form = event.target;
+            const description = form.description.value;
+            const deadline = form.deadline.value;
+            const assignedTo = Array.from(form.assignedTo.selectedOptions).map(option => option.value);
+            
+            if (!description || !deadline || assignedTo.length === 0) {
+                alert("Por favor, preencha todos os campos.");
+                return;
+            }
+
+            try {
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'hub-marketing-slap';
+                await addDoc(collection(db, `artifacts/${appId}/public/data/tasks`), {
+                    description,
+                    deadline,
+                    assignedTo,
+                    createdAt: serverTimestamp()
+                });
+                closeFormModal();
+            } catch (error) {
+                console.error("Erro ao adicionar tarefa: ", error);
+            }
+        }
+
+        async function deleteTask(taskId) {
+            if (confirm("Tem certeza que deseja excluir esta tarefa?")) {
+                try {
+                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'hub-marketing-slap';
+                    await deleteDoc(doc(db, `artifacts/${appId}/public/data/tasks`, taskId));
+                } catch (error) {
+                    console.error("Erro ao excluir tarefa: ", error);
+                }
+            }
+        }
+        
+        async function saveCalendarEvent(event) {
+            event.preventDefault();
+            const form = event.target;
+            const date = form.date.value;
+            const type = form.type.value;
+            const description = form.description.value;
+
+            if (!date || !type || !description) {
+                alert("Por favor, preencha todos os campos.");
+                return;
+            }
+
+            try {
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'hub-marketing-slap';
+                await addDoc(collection(db, `artifacts/${appId}/public/data/calendarEvents`), {
+                    date,
+                    type,
+                    description,
+                    createdAt: serverTimestamp()
+                });
+                closeFormModal();
+            } catch (error) {
+                console.error("Erro ao adicionar evento no calendário: ", error);
+            }
+        }
+
+        async function deleteCalendarEvent(eventId) {
+            event.stopPropagation(); // Impede que o modal de adicionar evento abra
+            if (confirm("Tem certeza que deseja excluir este post?")) {
+                try {
+                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'hub-marketing-slap';
+                    await deleteDoc(doc(db, `artifacts/${appId}/public/data/calendarEvents`, eventId));
+                } catch (error) {
+                    console.error("Erro ao excluir evento do calendário: ", error);
+                }
+            }
+        }
+        
+        // --- FUNÇÕES DE MODAL ---
+        function openTaskForm() {
+            const modalTitle = document.getElementById('form-modal-title');
+            const modalBody = document.getElementById('form-modal-body');
+            
+            modalTitle.textContent = "Adicionar Nova Tarefa";
+            modalBody.innerHTML = `
+                <div>
+                    <label for="description" class="block text-sm font-medium text-stone-700">Descrição</label>
+                    <input type="text" id="description" name="description" class="form-input mt-1" required>
+                </div>
+                <div>
+                    <label for="deadline" class="block text-sm font-medium text-stone-700">Prazo Final</label>
+                    <input type="date" id="deadline" name="deadline" class="form-input mt-1" required>
+                </div>
+                <div>
+                    <label for="assignedTo" class="block text-sm font-medium text-stone-700">Atribuir para (segure Ctrl/Cmd para selecionar vários)</label>
+                    <select id="assignedTo" name="assignedTo" class="form-input mt-1" multiple required>
+                        <option value="Ana">Ana</option>
+                        <option value="Bruno">Bruno</option>
+                        <option value="Carla">Carla</option>
+                        <option value="Daniel">Daniel</option>
+                    </select>
+                </div>
+                <div class="text-right">
+                    <button type="submit" class="primary-btn">Salvar Tarefa</button>
+                </div>
+            `;
+            modalBody.onsubmit = saveTask;
+            document.getElementById('form-modal').classList.add('visible');
+        }
+
+        function openCalendarEventForm(date) {
+            const modalTitle = document.getElementById('form-modal-title');
+            const modalBody = document.getElementById('form-modal-body');
+            
+            modalTitle.textContent = `Adicionar Post para ${new Date(date + 'T03:00:00Z').toLocaleDateString('pt-BR')}`;
+            modalBody.innerHTML = `
+                <input type="hidden" name="date" value="${date}">
+                <div>
+                    <label for="type" class="block text-sm font-medium text-stone-700">Tipo de Post</label>
+                    <select id="type" name="type" class="form-input mt-1" required>
+                        <option value="stories">Stories</option>
+                        <option value="reels">Reels</option>
+                        <option value="tiktok">TikTok</option>
+                        <option value="youtube">YouTube</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="description" class="block text-sm font-medium text-stone-700">Descrição do Post</label>
+                    <input type="text" id="description" name="description" class="form-input mt-1" required>
+                </div>
+                <div class="text-right">
+                    <button type="submit" class="primary-btn">Salvar Post</button>
+                </div>
+            `;
+            modalBody.onsubmit = saveCalendarEvent;
+            document.getElementById('form-modal').classList.add('visible');
+        }
+
+
+        function closeFormModal() {
+            document.getElementById('form-modal').classList.remove('visible');
+        }
+
+        // --- INICIALIZAÇÃO ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadMockData(); // Carrega dados locais como fallback
+            initializeFirebase(); // Inicia o Firebase
+            
+            const pageRenderers = {
+                'inicio': renderInicioSection,
+                'campanhas': renderCampanhasSection,
+                'tarefas': renderTarefasSection,
+                'calendario': renderCalendarioSection,
+                // ... outras seções ...
+            };
+
+            const mainNav = document.getElementById('main-navigation');
+            mainNav.addEventListener('click', (event) => {
+                const target = event.target.closest('.nav-item');
+                if (!target) return;
+
+                if (target.classList.contains('dropdown-toggle')) {
+                    const dropdown = target.closest('.nav-dropdown');
+                    const submenu = dropdown.querySelector('.submenu');
+                    const arrow = target.querySelector('.dropdown-arrow');
+                    submenu.classList.toggle('open');
+                    arrow.classList.toggle('rotate-180');
+                    return;
+                }
+
+                const pageKey = target.dataset.target;
+                if (pageKey && pageRenderers[pageKey]) {
+                    pageRenderers[pageKey]();
+                    setActiveNavItem(target);
+                }
+            });
+
+            // Renderização inicial (será com dados de fallback até o Firebase carregar)
+            renderInicioSection();
+            setActiveNavItem(document.querySelector('[data-target="inicio"]'));
+        });
+
+        // Expor funções ao escopo global para serem chamadas pelo HTML
+        window.openTaskForm = openTaskForm;
+        window.deleteTask = deleteTask;
+        window.openCalendarEventForm = openCalendarEventForm;
+        window.deleteCalendarEvent = deleteCalendarEvent;
+        window.closeFormModal = closeFormModal;
+
+    </script>
+</body>
+</html>
