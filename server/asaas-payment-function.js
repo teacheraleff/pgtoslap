@@ -60,7 +60,13 @@ exports.handler = async (event, context) => {
         email: customer.email,
         cpfCnpj: cleanCpfCnpj,
         
-        // Dados adicionais (obrigatórios) - REMOVEMOS DATE OF BIRTH E PHONE PARA SIMPLIFICAR
+        // DADOS DE ENDEREÇO E TELEFONE (FICÇÃO) PARA SATISFAZER A VALIDAÇÃO DO SANDBOX
+        mobilePhone: "47999999999", // Telefone de teste
+        address: "Rua Teste de Sucesso",
+        addressNumber: "123",
+        city: "São Paulo",
+        state: "SP",
+        postalCode: "01000000",
         
         // Lógica de Parcelamento (Se for Cartão de Crédito)
         ...(payment.billingType === 'CREDIT_CARD' && {
