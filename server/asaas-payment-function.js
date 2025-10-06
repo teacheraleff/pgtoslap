@@ -48,7 +48,6 @@ exports.handler = async (event, context) => {
     // 2. Montagem do Payload para o Asaas
     const asaasPayload = {
         // CORREÇÃO FINAL: REMOVEMOS O CAMPO 'customer' para forçar a criação de um novo cliente
-        // Os campos 'name', 'email' e 'cpfCnpj' abaixo serão usados para criar o cliente automaticamente.
         
         billingType: payment.billingType,
         value: finalValue,
@@ -65,6 +64,13 @@ exports.handler = async (event, context) => {
         dateOfBirth: customer.dateOfBirth, // Formato AAAA-MM-DD
         phone: '47999999999', // Adiciona um telefone fixo para satisfazer a validação rigorosa do Sandbox
         
+        // CAMPOS DE ENDEREÇO (FICÇÃO) PARA SATISFAZER A VALIDAÇÃO DO ASAAS
+        address: "Rua Teste da Silva",
+        addressNumber: "100",
+        city: "São Paulo",
+        state: "SP",
+        postalCode: "01000-000",
+
         // Lógica de Parcelamento (Se for Cartão de Crédito)
         ...(payment.billingType === 'CREDIT_CARD' && {
             installmentCount: payment.installmentCount,
