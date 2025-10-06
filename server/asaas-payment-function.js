@@ -45,16 +45,15 @@ exports.handler = async (event, context) => {
     
     // 2. Montagem do Payload para o Asaas
     const asaasPayload = {
-        // CORREÇÃO FINAL: Usamos o nome do cliente no campo 'customer' para a criação simplificada.
-        // O Asaas usa o nome como uma referência para criar o cliente se o ID não for passado.
-        customer: customer.name, 
+        // CORREÇÃO FINAL: REMOVEMOS O CAMPO 'customer' para forçar a criação de um novo cliente
+        // Os campos 'name', 'email' e 'cpfCnpj' abaixo serão usados para criar o cliente automaticamente.
+        
         billingType: payment.billingType,
         value: finalValue,
         dueDate: payment.dueDate,
         description: payment.description,
         
-        // Dados do Cliente (Customer Data) - Usados para criação/consulta de cliente
-        // Mesmo que a cobrança seja gerada diretamente, esses dados são necessários
+        // Dados do Cliente (Customer Data) - Esses campos são usados para criar o cliente
         externalReference: 'SLAP-CHCKOUT-REF',
         name: customer.name,
         email: customer.email,
